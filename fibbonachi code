@@ -1,0 +1,130 @@
+#!/usr/bin/python
+import sys
+
+def percent(part, total):
+    """Calculate the completion percentage."""
+    return 100 * float(part) / float(total)
+
+def write_data_to_file_prompt(data, newline=True):
+    """Prompt user for filename and write data to file."""
+    filename = input("Filename: ")
+    with open(filename, 'w') as file:
+        for line in data:
+            file.write(line + ("\n" if newline else ""))
+
+class Fibonacci:
+    """Generate Fibonacci numbers and sequences."""
+    @staticmethod
+    def single(n):
+        """Return the nth Fibonacci number using an iterative method."""
+        a, b = 0, 1
+        for _ in range(n):
+            a, b = b, a + b
+        return a
+
+    @staticmethod
+    def sequence(start, end):
+        """Generate a sequence of Fibonacci numbers from start to end."""
+        return [str(Fibonacci.single(i)) for i in range(start, end)]
+
+class FibonacciEncryption:
+    """Encrypt and decrypt text using a Fibonacci-based encryption list."""
+    def __init__(self, encryption_list):
+        self.encryption_list = encryption_list
+
+    def encrypt(self, text_to_encrypt):
+        """Encrypt text using Fibonacci encryption list."""
+        encrypted_text = []
+        offset_index = 0
+        for char in text_to_encrypt:
+            offset_value = int(self.encryption_list[offset_index % len(self.encryption_list)])
+            encrypted_text.append(str(ord(char) + offset_value))
+            offset_index += 1
+        return " ".join(encrypted_text)
+
+    def decrypt(self, text_to_decrypt):
+        """Decrypt text using Fibonacci encryption list."""
+        decrypted_text = []
+        encrypted_values = text_to_decrypt.split()
+        offset_index = 0
+        for value in encrypted_values:
+            offset_value = int(self.encryption_list[offset_index % len(self.encryption_list)])
+            decrypted_text.append(chr(int(value) - offset_value))
+            offset_index += 1
+        return ''.join(decrypted_text)
+
+def process_file(fib_enc, filename, action):
+    """Encrypt or decrypt the content of a file and return as a list of strings."""
+    final = []
+    with open(filename, 'r') as file:
+        for line in file:
+            if action == "encrypt":
+                final.append(fib_enc.encrypt(line.strip()))
+            elif action == "decrypt":
+                final.append(fib_enc.decrypt(line.strip()))
+    return final
+
+# Main Execution
+fib = Fibonacci()
+encryption_list = fib.sequence(1, 11)
+fib_enc = FibonacciEncryption(encryption_list)
+print("Encryption list:", encryption_list)
+
+try:
+    # Parse command-line arguments
+    if len(sys.argv) < 2 or sys.argv[1] not in ["--encrypt", "--decrypt", "--help"]:
+        raise IndexError("Incorrect command-line arguments.")
+
+    # Help option
+    if sys.argv[1] == "--help":
+        print("Usage: fibonacci.py [--encrypt/--decrypt] <input file> --output <output file>")
+        print("Example: fibonacci.py --encrypt hello.txt --output hello-encrypted.txt")
+        print("Example: fibonacci.py --decrypt hello-encrypted.txt --output hello.txt")
+        sys.exit(0)
+
+    # Encryption/Decryption options
+    action = "encrypt" if sys.argv[1] == "--encrypt" else "decrypt"
+    if len(sys.argv) < 5 or sys.argv[3] != "--output":
+        raise IndexError("Missing or incorrect output file arguments.")
+
+    input_filename = sys.argv[2]
+    output_filename = sys.argv[4]
+
+    # Process file
+    final_result = process_file(fib_enc, input_filename, action)
+    with open(output_filename, 'w') as output_file:
+        for line in final_result:
+            output_file.write(line + ("\n" if action == "encrypt" else ""))
+
+    print(f"Successfully completed {action}ion. Output saved to '{output_filename}'.")
+
+except IndexError as e:
+    print(f"Error: {e}. Please check command-line arguments.")
+except FileNotFoundError:
+    print(f"File '{input_filename}' not found. Please check the filename and try again.")
+
+# Manual input mode
+while True:
+    ed_answer = input("(e)ncrypt or (d)ecrypt? ")
+    if ed_answer.lower() in ['e', 'd']:
+        sf_answer = input("(s)tdin or (f)ile? ")
+        if sf_answer.lower() == "s":
+            text = input("Text: ")
+            result = fib_enc.encrypt(text) if ed_answer == "e" else fib_enc.decrypt(text)
+            print("Finished! Result:", result)
+        elif sf_answer.lower() == "f":
+            filename = input("Filename: ")
+            try:
+                with open(filename, 'r') as file:
+                    lines = file.readlines()
+                final_result = [fib_enc.encrypt(line.strip()) if ed_answer == "e" else fib_enc.decrypt(line.strip()) for line in lines]
+                
+                save_to_file = input("Would you like to save this output to a file? (y)es/(n)o: ")
+                if save_to_file.lower() == "y":
+                    write_data_to_file_prompt(final_result, newline=(ed_answer == "e"))
+                else:
+                    print("Final result:", final_result)
+            except FileNotFoundError:
+                print("File not found. Please check the filename and try again.")
+    else:
+        print("Invalid input. Please choose (e)ncrypt or (d)ecrypt.")
